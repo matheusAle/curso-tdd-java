@@ -4,25 +4,25 @@ import static br.ce.wcaquino.exceptions.LocacaoException.*;
 import static br.ce.wcaquino.utils.DataUtils.adicionarDias;
 
 import java.util.Date;
+import java.util.List;
 
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
-import br.ce.wcaquino.exceptions.LocacaoException;
 
 public class LocacaoService {
 	
-	public Locacao alugarFilme(Usuario usuario, Filme filme) throws FilmeSemEstoque, SemFilme, SemUsuario {
+	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoque, SemFilme, SemUsuario {
 
-        if (filme == null) throw new SemFilme();
+        if (filmes == null || filmes.size() == 0) throw new SemFilme();
         if (usuario == null) throw new SemUsuario();
-	    if (filme.getEstoque() == 0) throw new FilmeSemEstoque();
+	    if (filmes.stream().anyMatch((Filme filme) -> filme.getEstoque() == 0)) throw new FilmeSemEstoque();
 
 		Locacao locacao = new Locacao();
-		locacao.setFilme(filme);
+		locacao.setFilme(filmes);
 		locacao.setUsuario(usuario);
 		locacao.setDataLocacao(new Date());
-		locacao.setValor(filme.getPrecoLocacao());
+		locacao.setValor(filmes.stream().mapToDouble(Filme::getPrecoLocacao).sum());
 
 		//Entrega no dia seguinte
 		Date dataEntrega = new Date();

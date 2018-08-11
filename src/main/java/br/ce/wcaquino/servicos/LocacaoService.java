@@ -29,6 +29,13 @@ public class LocacaoService {
 	}
 
 	public static void main(String[] args) {
-		
+		LocacaoService locacaoService = new LocacaoService();
+		Usuario usuario = new Usuario("Usuario 1");
+		Filme filme = new Filme("Filme 1", 2, 5.0);
+
+		Locacao locacao = locacaoService.alugarFilme(usuario, filme );
+		System.out.println(locacao.getValor());
+		System.out.println(locacao.getDataLocacao());
+		System.out.println(locacao.getDataRetorno());
 	}
 }

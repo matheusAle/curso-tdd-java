@@ -18,11 +18,27 @@ public class LocacaoService {
         if (usuario == null) throw new SemUsuario();
 	    if (filmes.stream().anyMatch((Filme filme) -> filme.getEstoque() == 0)) throw new FilmeSemEstoque();
 
+
 		Locacao locacao = new Locacao();
 		locacao.setFilme(filmes);
 		locacao.setUsuario(usuario);
 		locacao.setDataLocacao(new Date());
-		locacao.setValor(filmes.stream().mapToDouble(Filme::getPrecoLocacao).sum());
+
+		double valorDaLocacao = 0D;
+
+		for (int i = 0; i < filmes.size(); i++) {
+		    double valorFilme = filmes.get(i).getPrecoLocacao();
+		    switch (i) {
+                case 2: valorFilme = valorFilme * .75; break; // terceiro filme: desconto de 25%
+                case 3: valorFilme = valorFilme * .50; break; // quarto filme: desconto de 50%
+                case 4: valorFilme = valorFilme * .25; break; // quinto filme: desconto de 50%
+                case 5: valorFilme = valorFilme * 0.0; break; // sexto filme: desconto de 100%
+            }
+            valorDaLocacao += valorFilme;
+        }
+
+		locacao.setValor(valorDaLocacao);
+
 
 		//Entrega no dia seguinte
 		Date dataEntrega = new Date();

@@ -23,13 +23,20 @@ public class LocacaoServiceTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
+    private LocacaoService locacaoService;
+    private Usuario usuario;
+    private Filme filme;
+
+    @Before
+    public void setup() {
+        locacaoService = new LocacaoService();
+        usuario = new Usuario("Usuario 1");
+        filme = new Filme("Filme 1", 2, 5.0);
+    }
+
     @Test()
     public void testeLocacao() throws Exception {
-        Locacao locacao = new LocacaoService().alugarFilme(
-                new Usuario("Usuario 1"),
-                new Filme("Filme 1", 2, 5.0)
-        );
-
+        Locacao locacao = locacaoService.alugarFilme(usuario, filme);
         error.checkThat(locacao.getValor(), is(equalTo(5.0)));
         error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
         error.checkThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(true));
@@ -38,27 +45,20 @@ public class LocacaoServiceTest {
     @Test
     public void testLocacao_filmeSemEstoque() throws Exception {
         exception.expect(LocacaoException.FilmeSemEstoque.class);
-        new LocacaoService().alugarFilme(
-                new Usuario("Usuario 1"),
-                new Filme("Filme 1", 0, 5.0)
-        );
+        filme.setEstoque(0);
+        locacaoService.alugarFilme(usuario, filme);
     }
 
     @Test
     public void testLocacao_semUsuario() throws Exception {
         exception.expect(LocacaoException.SemUsuario.class);
-        new LocacaoService().alugarFilme(
-                null,
-                new Filme("Filme 1", 0, 5.0)
-        );
+        locacaoService.alugarFilme(null, filme);
     }
 
     @Test
     public void testLocacao_semFilme() throws Exception {
         exception.expect(LocacaoException.SemFilme.class);
-        new LocacaoService().alugarFilme(
-                new Usuario("Usuario 1"),
-                null
-        );
+        locacaoService.alugarFilme(usuario, null);
+
     }
 }

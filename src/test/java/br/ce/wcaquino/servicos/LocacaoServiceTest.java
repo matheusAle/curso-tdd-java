@@ -4,6 +4,7 @@ import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
+import br.ce.wcaquino.matchers.AppMatchers;
 import br.ce.wcaquino.utils.DataUtils;
 import org.junit.Assume;
 import org.junit.Before;
@@ -17,6 +18,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static br.ce.wcaquino.matchers.AppMatchers.caiEm;
+import static br.ce.wcaquino.matchers.AppMatchers.ehHojeComDiferencaDeDias;
 import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
 import static br.ce.wcaquino.utils.DataUtils.obterDataComDiferencaDias;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -50,7 +53,7 @@ public class LocacaoServiceTest {
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         error.checkThat(locacao.getValor(), is(equalTo(4.0 * filmes.size())));
         error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
-        error.checkThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(true));
+        error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaDeDias(1));
     }
 
     @Test
@@ -84,6 +87,6 @@ public class LocacaoServiceTest {
         Date dataRetorno = locacaoService
                 .alugarFilme(usuario, filmes)
                 .getDataRetorno();
-        assertThat(DataUtils.verificarDiaSemana(dataRetorno, Calendar.MONDAY), is(true));
+        assertThat(dataRetorno, caiEm(Calendar.MONDAY));
     }
 }

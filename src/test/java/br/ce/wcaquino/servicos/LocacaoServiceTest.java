@@ -4,16 +4,24 @@ import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
-import org.junit.*;
+import br.ce.wcaquino.utils.DataUtils;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
 import static br.ce.wcaquino.utils.DataUtils.obterDataComDiferencaDias;
-import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class LocacaoServiceTest {
 
@@ -38,6 +46,7 @@ public class LocacaoServiceTest {
 
     @Test()
     public void deveAlugarFilme() throws Exception {
+        Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         error.checkThat(locacao.getValor(), is(equalTo(4.0 * filmes.size())));
         error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
@@ -74,7 +83,7 @@ public class LocacaoServiceTest {
         this.filmes.add(new Filme("Filme 3", 2, 4.0));
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         // 4 + 4 + 3 (25%) = 11D
-        Assert.assertThat(locacao.getValor(), is(equalTo(11D)));
+        assertThat(locacao.getValor(), is(equalTo(11D)));
     }
 
     @Test
@@ -83,7 +92,7 @@ public class LocacaoServiceTest {
         this.filmes.add(new Filme("Filme 4", 2, 4.0));
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         // 4 + 4 + 3 (25%) + 2 (50%) = 13D
-        Assert.assertThat(locacao.getValor(), is(equalTo(13D)));
+        assertThat(locacao.getValor(), is(equalTo(13D)));
     }
 
     @Test
@@ -93,7 +102,7 @@ public class LocacaoServiceTest {
         this.filmes.add(new Filme("Filme 5", 2, 4.0));
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         // 4 + 4 + 3 (25%) + 2 (50%) + 1 (75%) = 14D
-        Assert.assertThat(locacao.getValor(), is(equalTo(14D)));
+        assertThat(locacao.getValor(), is(equalTo(14D)));
     }
 
     @Test
@@ -103,7 +112,15 @@ public class LocacaoServiceTest {
         this.filmes.add(new Filme("Filme 6", 2, 4.0));
         Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
         // 4 + 4 + 3 (25%) + 2 (50%) + 1 (75%) + 0 (100%)= 14D
-        Assert.assertThat(locacao.getValor(), is(equalTo(14D)));
+        assertThat(locacao.getValor(), is(equalTo(14D)));
     }
 
+    @Test
+    public void deveDevolverNaSegundaAoAlugarFilmeNoSabado() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
+        Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+        Date dataRetorno = locacaoService
+                .alugarFilme(usuario, filmes)
+                .getDataRetorno();
+        assertThat(DataUtils.verificarDiaSemana(dataRetorno, Calendar.MONDAY), is(true));
+    }
 }

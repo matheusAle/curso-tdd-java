@@ -79,43 +79,6 @@ public class LocacaoServiceTest {
     }
 
     @Test
-    public void devaPagarApenas25PorcentoNoTerceiroFilme() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
-        this.filmes.add(new Filme("Filme 3", 2, 4.0));
-        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
-        // 4 + 4 + 3 (25%) = 11D
-        assertThat(locacao.getValor(), is(equalTo(11D)));
-    }
-
-    @Test
-    public void devaPagarApenas50PorcentoNoQuartoFilme() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
-        this.filmes.add(new Filme("Filme 3", 2, 4.0));
-        this.filmes.add(new Filme("Filme 4", 2, 4.0));
-        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
-        // 4 + 4 + 3 (25%) + 2 (50%) = 13D
-        assertThat(locacao.getValor(), is(equalTo(13D)));
-    }
-
-    @Test
-    public void devaPagarApenas75PorcentoNoQuintoFilme() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
-        this.filmes.add(new Filme("Filme 3", 2, 4.0));
-        this.filmes.add(new Filme("Filme 4", 2, 4.0));
-        this.filmes.add(new Filme("Filme 5", 2, 4.0));
-        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
-        // 4 + 4 + 3 (25%) + 2 (50%) + 1 (75%) = 14D
-        assertThat(locacao.getValor(), is(equalTo(14D)));
-    }
-
-    @Test
-    public void devaPagarApenas100PorcentoNoSextoFilme() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
-        this.filmes.add(new Filme("Filme 4", 2, 4.0));
-        this.filmes.add(new Filme("Filme 5", 2, 4.0));
-        this.filmes.add(new Filme("Filme 6", 2, 4.0));
-        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
-        // 4 + 4 + 3 (25%) + 2 (50%) + 1 (75%) + 0 (100%)= 14D
-        assertThat(locacao.getValor(), is(equalTo(14D)));
-    }
-
-    @Test
     public void deveDevolverNaSegundaAoAlugarFilmeNoSabado() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario {
         Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
         Date dataRetorno = locacaoService

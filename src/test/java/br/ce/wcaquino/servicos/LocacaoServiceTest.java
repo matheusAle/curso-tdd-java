@@ -8,7 +8,7 @@ import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
-import br.ce.wcaquino.matchers.AppMatchers;
+import br.ce.wcaquino.exceptions.SPCException;
 import br.ce.wcaquino.utils.DataUtils;
 import org.junit.Assume;
 import org.junit.Before;
@@ -16,11 +16,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
+import org.mockito.*;
 
 import java.util.*;
 
 import static br.ce.wcaquino.matchers.AppMatchers.caiEm;
+import static br.ce.wcaquino.matchers.AppMatchers.ehHoje;
 import static br.ce.wcaquino.matchers.AppMatchers.ehHojeComDiferencaDeDias;
 import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -28,6 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class LocacaoServiceTest {
 
@@ -37,19 +39,24 @@ public class LocacaoServiceTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private LocacaoService locacaoService;
-    private Usuario usuario;
+    @InjectMocks
+    public LocacaoService locacaoService;
+
+    @Mock
+    public SPCService spcService;
+
+    @Mock
+    public LocacaoDAO locacaoDAO;
+
+    @Mock
+    public EmailService emailService;
+
     private List<Filme> filmes;
-    private SPCService spcService;
-    private LocacaoDAO locacaoDAO;
-    private EmailService emailService;
+    private Usuario usuario;
 
     @Before
     public void setup() {
-        locacaoService = new LocacaoService();
-        locacaoService.setDao(locacaoDAO = Mockito.mock(LocacaoDAO.class));
-        locacaoService.setSpcService(spcService = Mockito.mock(SPCService.class));
-        locacaoService.setEmailService(emailService = Mockito.mock(EmailService.class));
+        MockitoAnnotations.initMocks(this);
         usuario = UsuarioBuilder.umUsuario().agora();
         filmes = Arrays.asList(FilmeBuilder.umFilme().agora(), FilmeBuilder.umFilme().agora());
     }
@@ -121,5 +128,26 @@ public class LocacaoServiceTest {
         verify(emailService).notificarAtraso(usuario1);
         verify(emailService, never()).notificarAtraso(usuario2);
         verify(emailService).notificarAtraso(usuario3);
+    }
+
+    @Test
+    public void deveTratarErroNoSPC() throws Exception {
+        when(spcService.possuiNegativacao(usuario)).thenThrow(new SPCException.ErroInesperado());
+        exception.expect(SPCException.ErroInesperado.class);
+        locacaoService.alugarFilme(usuario, filmes);
+    }
+
+    @Test
+    public void deveProrrogarUmaLocacao() throws Exception {
+        Locacao locacao = LocacaoBuilder.umLocacao().agora();
+        locacaoService.prorrogarAlocacao(locacao, 3);
+
+        ArgumentCaptor<Locacao> argumentCaptor = ArgumentCaptor.forClass(Locacao.class);
+        Mockito.verify(locacaoDAO).salvar(argumentCaptor.capture());
+        Locacao locacaoRetornada = argumentCaptor.getValue();
+
+        error.checkThat(locacaoRetornada.getValor(), is(12D));
+        error.checkThat(locacaoRetornada.getDataLocacao(), ehHoje());
+        error.checkThat(locacaoRetornada.getDataRetorno(), ehHojeComDiferencaDeDias(3));
     }
 }

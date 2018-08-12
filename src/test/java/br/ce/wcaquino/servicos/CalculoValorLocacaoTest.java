@@ -11,7 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,9 +27,21 @@ import static org.junit.Assert.assertThat;
 @RunWith(Parameterized.class)
 public class CalculoValorLocacaoTest {
 
-    private LocacaoService locacaoService;
+    @InjectMocks
+    public LocacaoService locacaoService;
+
+    @Mock
+    public SPCService spcService;
+
+    @Mock
+    public LocacaoDAO locacaoDAO;
+
+    @Mock
+    public EmailService emailService;
+
     @Parameterized.Parameter(value = 0)
     public List<Filme> filmes;
+
     @Parameterized.Parameter(value = 1)
     public double valorLocacao;
 
@@ -35,9 +50,7 @@ public class CalculoValorLocacaoTest {
 
     @Before
     public void setup() {
-        locacaoService = new LocacaoService();
-        locacaoService.setSpcService(Mockito.mock(SPCService.class));
-        locacaoService.setDao(Mockito.mock(LocacaoDAO.class));
+        MockitoAnnotations.initMocks(this);
     }
 
     @Parameterized.Parameters(name = "{2}")
@@ -55,7 +68,7 @@ public class CalculoValorLocacaoTest {
     }
 
     @Test
-    public void deveCalcularOValorDaLocacaoConsiderandoDescontos() throws LocacaoException.FilmeSemEstoque, LocacaoException.SemFilme, LocacaoException.SemUsuario, LocacaoException.UsuarioNegativoNoSPC {
+    public void deveCalcularOValorDaLocacaoConsiderandoDescontos() throws Exception {
         Locacao locacao = locacaoService.alugarFilme(UsuarioBuilder.umUsuario().agora(), filmes);
         assertThat(locacao.getValor(), is(equalTo(valorLocacao)));
     }

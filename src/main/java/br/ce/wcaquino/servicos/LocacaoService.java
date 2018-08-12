@@ -2,6 +2,7 @@ package br.ce.wcaquino.servicos;
 
 import static br.ce.wcaquino.exceptions.LocacaoException.*;
 import static br.ce.wcaquino.utils.DataUtils.adicionarDias;
+import static br.ce.wcaquino.utils.DataUtils.obterDataComDiferencaDias;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -12,6 +13,7 @@ import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
+import br.ce.wcaquino.exceptions.SPCException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoService {
@@ -20,7 +22,7 @@ public class LocacaoService {
     private SPCService spcService;
     private EmailService emailService;
 
-	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoque, SemFilme, SemUsuario, UsuarioNegativoNoSPC {
+	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws Exception {
 
         if (filmes == null || filmes.size() == 0) throw new SemFilme();
         if (usuario == null) throw new SemUsuario();
@@ -71,18 +73,15 @@ public class LocacaoService {
                 .filter(locacao -> locacao.getDataRetorno().before(new Date()))
                 .map(Locacao::getUsuario)
                 .forEach(emailService::notificarAtraso);
-;
     }
 
-    public void setDao(LocacaoDAO dao) {
-        this.dao = dao;
-    }
-
-    public void setSpcService(SPCService spcService) {
-	    this.spcService = spcService;
-    }
-
-    public void setEmailService(EmailService emailService) {
-	    this.emailService = emailService;
+    public void prorrogarAlocacao(Locacao locacao, int dias) {
+	    Locacao novaLocacao = new Locacao();
+	    novaLocacao.setUsuario(locacao.getUsuario());
+	    novaLocacao.setValor(locacao.getValor() * dias);
+	    novaLocacao.setFilmes(locacao.getFilme());
+	    novaLocacao.setDataLocacao(new Date());
+	    novaLocacao.setDataRetorno(obterDataComDiferencaDias(dias));
+	    dao.salvar(novaLocacao);
     }
 }

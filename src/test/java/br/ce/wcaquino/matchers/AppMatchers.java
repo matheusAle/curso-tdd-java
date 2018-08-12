@@ -9,4 +9,8 @@ public class AppMatchers {
     public static DiferencaDeDiasMatcher ehHojeComDiferencaDeDias(Integer diaSemana) {
         return new DiferencaDeDiasMatcher(diaSemana);
     }
+
+    public static DiferencaDeDiasMatcher ehHoje() {
+        return new DiferencaDeDiasMatcher(0);
+    }
 }

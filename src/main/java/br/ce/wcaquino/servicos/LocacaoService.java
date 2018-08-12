@@ -7,22 +7,31 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
+import br.ce.wcaquino.exceptions.LocacaoException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoService {
-	
-	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoque, SemFilme, SemUsuario {
+
+    private LocacaoDAO dao;
+    private SPCService spcService;
+    private EmailService emailService;
+
+	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoque, SemFilme, SemUsuario, UsuarioNegativoNoSPC {
 
         if (filmes == null || filmes.size() == 0) throw new SemFilme();
         if (usuario == null) throw new SemUsuario();
 	    if (filmes.stream().anyMatch((Filme filme) -> filme.getEstoque() == 0)) throw new FilmeSemEstoque();
 
+	    if(spcService.possuiNegativacao(usuario)) {
+	        throw new LocacaoException.UsuarioNegativoNoSPC();
+        }
 
 		Locacao locacao = new Locacao();
-		locacao.setFilme(filmes);
+		locacao.setFilmes(filmes);
 		locacao.setUsuario(usuario);
 		locacao.setDataLocacao(new Date());
 
@@ -51,10 +60,29 @@ public class LocacaoService {
 		locacao.setDataRetorno(dataEntrega);
 
         //Salvando a locacao...
-		//TODO adicionar método para salvar
-		
+		dao.salvar(locacao);
+
 		return locacao;
 	}
 
+	public void notificarAtrasos() {
+	    dao.obterLocacoesPendentes()
+                .stream()
+                .filter(locacao -> locacao.getDataRetorno().before(new Date()))
+                .map(Locacao::getUsuario)
+                .forEach(emailService::notificarAtraso);
+;
+    }
 
+    public void setDao(LocacaoDAO dao) {
+        this.dao = dao;
+    }
+
+    public void setSpcService(SPCService spcService) {
+	    this.spcService = spcService;
+    }
+
+    public void setEmailService(EmailService emailService) {
+	    this.emailService = emailService;
+    }
 }

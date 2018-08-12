@@ -13,7 +13,6 @@ import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
-import br.ce.wcaquino.exceptions.SPCException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoService {
@@ -35,26 +34,12 @@ public class LocacaoService {
 		Locacao locacao = new Locacao();
 		locacao.setFilmes(filmes);
 		locacao.setUsuario(usuario);
-		locacao.setDataLocacao(new Date());
-
-		double valorDaLocacao = 0D;
-
-		for (int i = 0; i < filmes.size(); i++) {
-		    double valorFilme = filmes.get(i).getPrecoLocacao();
-		    switch (i) {
-                case 2: valorFilme = valorFilme * .75; break; // terceiro filme: desconto de 25%
-                case 3: valorFilme = valorFilme * .50; break; // quarto filme: desconto de 50%
-                case 4: valorFilme = valorFilme * .25; break; // quinto filme: desconto de 50%
-                case 5: valorFilme = valorFilme * 0.0; break; // sexto filme: desconto de 100%
-            }
-            valorDaLocacao += valorFilme;
-        }
-
-		locacao.setValor(valorDaLocacao);
+		locacao.setDataLocacao(obterData());
+		locacao.setValor(calcularValorDaLocacao(filmes));
 
 
 		//Entrega no dia seguinte
-		Date dataEntrega = new Date();
+		Date dataEntrega = obterData();
 		dataEntrega = adicionarDias(dataEntrega, 1);
 		if (DataUtils.verificarDiaSemana(dataEntrega, Calendar.SUNDAY)) {
             dataEntrega = adicionarDias(dataEntrega, 1);
@@ -67,10 +52,29 @@ public class LocacaoService {
 		return locacao;
 	}
 
-	public void notificarAtrasos() {
+    private double calcularValorDaLocacao(List<Filme> filmes) {
+        double valorDaLocacao = 0D;
+        for (int i = 0; i < filmes.size(); i++) {
+            double valorFilme = filmes.get(i).getPrecoLocacao();
+            switch (i) {
+                case 2: valorFilme = valorFilme * .75; break; // terceiro filme: desconto de 25%
+                case 3: valorFilme = valorFilme * .50; break; // quarto filme: desconto de 50%
+                case 4: valorFilme = valorFilme * .25; break; // quinto filme: desconto de 50%
+                case 5: valorFilme = valorFilme * 0.0; break; // sexto filme: desconto de 100%
+            }
+            valorDaLocacao += valorFilme;
+        }
+        return valorDaLocacao;
+    }
+
+    protected Date obterData() {
+        return new Date();
+    }
+
+    public void notificarAtrasos() {
 	    dao.obterLocacoesPendentes()
                 .stream()
-                .filter(locacao -> locacao.getDataRetorno().before(new Date()))
+                .filter(locacao -> locacao.getDataRetorno().before(obterData()))
                 .map(Locacao::getUsuario)
                 .forEach(emailService::notificarAtraso);
     }
@@ -80,7 +84,7 @@ public class LocacaoService {
 	    novaLocacao.setUsuario(locacao.getUsuario());
 	    novaLocacao.setValor(locacao.getValor() * dias);
 	    novaLocacao.setFilmes(locacao.getFilme());
-	    novaLocacao.setDataLocacao(new Date());
+	    novaLocacao.setDataLocacao(obterData());
 	    novaLocacao.setDataRetorno(obterDataComDiferencaDias(dias));
 	    dao.salvar(novaLocacao);
     }

@@ -35,7 +35,7 @@ public class DataUtils {
 	public static Date obterDataComDiferencaDias(int dias) {
 		return adicionarDias(new Date(), dias);
 	}
-	
+
 	/**
 	 * Retorna uma instância de <code>Date</code> refletindo os valores passados por parametro
 	 * 

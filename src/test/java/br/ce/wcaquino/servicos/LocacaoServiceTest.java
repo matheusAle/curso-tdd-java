@@ -10,7 +10,6 @@ import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.LocacaoException;
 import br.ce.wcaquino.exceptions.SPCException;
 import br.ce.wcaquino.utils.DataUtils;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +38,7 @@ public class LocacaoServiceTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    @InjectMocks
+    @InjectMocks @Spy
     public LocacaoService locacaoService;
 
     @Mock
@@ -59,15 +58,6 @@ public class LocacaoServiceTest {
         MockitoAnnotations.initMocks(this);
         usuario = UsuarioBuilder.umUsuario().agora();
         filmes = Arrays.asList(FilmeBuilder.umFilme().agora(), FilmeBuilder.umFilme().agora());
-    }
-
-    @Test()
-    public void deveAlugarFilme() throws Exception {
-        Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
-        error.checkThat(locacao.getValor(), is(equalTo(4.0 * filmes.size())));
-        error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
-        error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaDeDias(1));
     }
 
     @Test
@@ -93,15 +83,6 @@ public class LocacaoServiceTest {
     public void deveLancarExcecaoAoTentarAlugarFilmeComFilmesParamComListaVazia() throws Exception {
         exception.expect(LocacaoException.SemFilme.class);
         locacaoService.alugarFilme(usuario, new ArrayList<Filme>());
-    }
-
-    @Test
-    public void deveDevolverNaSegundaAoAlugarFilmeNoSabado() throws Exception {
-        Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-        Date dataRetorno = locacaoService
-                .alugarFilme(usuario, filmes)
-                .getDataRetorno();
-        assertThat(dataRetorno, caiEm(Calendar.MONDAY));
     }
 
     @Test
@@ -138,6 +119,30 @@ public class LocacaoServiceTest {
     }
 
     @Test
+    public void deveDevolverNaSegundaAoAlugarFilmeNoSabado() throws Exception {
+        Mockito.doReturn(DataUtils.obterData(11, 8, 2018))
+                .when(locacaoService).obterData();
+
+        Date dataRetorno = locacaoService
+                .alugarFilme(usuario, filmes)
+                .getDataRetorno();
+
+        assertThat(dataRetorno, caiEm(Calendar.MONDAY));
+    }
+
+    @Test()
+    public void deveAlugarFilme() throws Exception {
+        Mockito.doReturn(DataUtils.obterData(9, 8, 2018))
+                .when(locacaoService).obterData();
+
+        Locacao locacao = locacaoService.alugarFilme(usuario, filmes);
+
+        error.checkThat(locacao.getValor(), is(equalTo(4.0 * filmes.size())));
+        error.checkThat(isMesmaData(locacao.getDataLocacao(), DataUtils.obterData(9, 8, 2018)), is(true));
+        error.checkThat(isMesmaData(locacao.getDataRetorno(), DataUtils.obterData(10, 8, 2018)), is(true));
+    }
+
+    @Test
     public void deveProrrogarUmaLocacao() throws Exception {
         Locacao locacao = LocacaoBuilder.umLocacao().agora();
         locacaoService.prorrogarAlocacao(locacao, 3);
@@ -150,4 +155,5 @@ public class LocacaoServiceTest {
         error.checkThat(locacaoRetornada.getDataLocacao(), ehHoje());
         error.checkThat(locacaoRetornada.getDataRetorno(), ehHojeComDiferencaDeDias(3));
     }
+
 }
